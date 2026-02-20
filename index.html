@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="referrer" content="no-referrer" />
+  <title>IP Address Extractor</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #111a2e;
+      --panel-2: #0f1730;
+      --text: #e7eefc;
+      --muted: #a9b7d6;
+      --border: #243251;
+      --danger: #ff6b6b;
+      --ok: #3ddc97;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+      --radius: 14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(90,167,255,0.15), transparent 60%),
+                  radial-gradient(900px 500px at 90% 15%, rgba(61,220,151,0.12), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    h1 { margin: 0; font-size: 22px; letter-spacing: 0.2px; }
+
+    .subtle { color: var(--muted); font-size: 13px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card header {
+      margin: 0;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card header .title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .card header .title strong { font-size: 14px; font-weight: 650; }
+    .card header .title span { color: var(--muted); font-size: 12px; }
+
+    .card .body { padding: 14px 16px 16px; }
+
+    textarea {
+      width: 100%;
+      min-height: 340px;
+      resize: vertical;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 48, 0.55);
+      color: var(--text);
+      padding: 12px 12px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.45;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: rgba(90,167,255,0.65);
+      box-shadow: 0 0 0 4px rgba(90,167,255,0.15);
+    }
+
+    .dropzone {
+      border: 1px dashed rgba(90,167,255,0.55);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      background: rgba(15, 23, 48, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .dropzone.dragover {
+      border-color: rgba(61,220,151,0.7);
+      box-shadow: 0 0 0 4px rgba(61,220,151,0.12);
+      color: var(--text);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+
+    button:hover { background: rgba(255,255,255,0.07); }
+    button:active { transform: translateY(1px); }
+
+    button.primary {
+      border-color: rgba(90,167,255,0.65);
+      background: rgba(90,167,255,0.12);
+    }
+
+    button.danger {
+      border-color: rgba(255,107,107,0.55);
+      background: rgba(255,107,107,0.10);
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    .pill.ok { border-color: rgba(61,220,151,0.45); color: rgba(61,220,151,0.95); }
+    .pill.warn { border-color: rgba(255,107,107,0.45); color: rgba(255,107,107,0.95); }
+
+    .results-toolbar {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .results-toolbar .left {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .results-toolbar input[type="search"] {
+      width: min(420px, 100%);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 48, 0.55);
+      color: var(--text);
+      padding: 9px 11px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .results-toolbar input[type="search"]:focus {
+      border-color: rgba(90,167,255,0.65);
+      box-shadow: 0 0 0 4px rgba(90,167,255,0.12);
+    }
+
+    .list {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(15, 23, 48, 0.35);
+    }
+
+    /* Slightly more flexible first column so IPv6 can wrap neatly */
+    .list-header,
+    .row {
+      display: grid;
+      grid-template-columns: minmax(220px, 280px) 1fr;
+      gap: 10px;
+      padding: 10px 12px;
+      align-items: center;
+    }
+
+    .list-header {
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .list-body {
+      max-height: 420px;
+      overflow: auto;
+    }
+
+    .row {
+      border-bottom: 1px solid rgba(36, 50, 81, 0.65);
+    }
+
+    .row:last-child { border-bottom: none; }
+
+    .ip {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text);
+
+      /* Prevent IPv6 from overlapping the links column */
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+
+    .links {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 10px;
+
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+
+      padding-bottom: 6px;
+
+      /* Firefox */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(169,183,214,0.38) rgba(15,23,48,0.00);
+
+      /* Right-side fade only */
+      -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 18px), transparent 100%);
+      mask-image: linear-gradient(to right, black 0%, black calc(100% - 18px), transparent 100%);
+    }
+
+    /* Chromium / Safari scrollbar styling */
+    .links::-webkit-scrollbar { height: 8px; }
+    .links::-webkit-scrollbar-track { background: transparent; border-radius: 999px; }
+    .links::-webkit-scrollbar-thumb {
+      background: rgba(169,183,214,0.35);
+      border-radius: 999px;
+      border: 2px solid rgba(15, 23, 48, 0.45);
+    }
+    .links:hover::-webkit-scrollbar-thumb { background: rgba(169,183,214,0.45); }
+    .links::-webkit-scrollbar-button { width: 0; height: 0; display: none; }
+    .links::-webkit-scrollbar-corner { background: transparent; }
+
+    a {
+      color: rgba(90,167,255,0.95);
+      text-decoration: none;
+      border: 1px solid rgba(90,167,255,0.35);
+      background: rgba(90,167,255,0.08);
+      padding: 6px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      transition: background 120ms ease, border-color 120ms ease;
+      flex: 0 0 auto;
+    }
+
+    a:hover {
+      background: rgba(90,167,255,0.14);
+      border-color: rgba(90,167,255,0.55);
+    }
+
+    span.placeholder {
+      color: rgba(169,183,214,0.95);
+      border: 1px solid rgba(169,183,214,0.30);
+      background: rgba(169,183,214,0.06);
+      padding: 6px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      flex: 0 0 auto;
+    }
+
+    .muted-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      margin-top: 10px;
+    }
+
+    .kbd {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>IP Address Extractor</h1>
+        <div class="subtle">Paste or drop text containing IPv4 and IPv6 addresses. Extracted unique IPs appear on the right.</div>
+      </div>
+      <div class="status" aria-live="polite">
+        <span id="statusPill" class="pill">Idle</span>
+        <span class="subtle">Local-only, no network calls</span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card" aria-labelledby="inputTitle">
+        <header>
+          <div class="title">
+            <strong id="inputTitle">Input</strong>
+            <span>Paste text or drag a .txt file onto the drop area</span>
+          </div>
+          <div class="actions">
+            <button id="extractBtn" class="primary" type="button">Extract IPs</button>
+            <button id="clearBtn" class="danger" type="button">Clear</button>
+          </div>
+        </header>
+
+        <div class="body">
+          <div id="dropzone" class="dropzone" role="region" aria-label="Drop zone">
+            <span>Drop a text file here, or paste into the box below</span>
+            <span class="kbd">Ctrl+V</span>
+          </div>
+
+          <textarea id="inputText" spellcheck="false" autocomplete="off" autocapitalize="off"
+            placeholder="Paste unstructured text here. Example: 'Client 2001:db8::1 contacted 192.0.2.44 at 10:02'"></textarea>
+
+          <div class="muted-note">
+            Notes: This page extracts candidate IP strings, validates them, and deduplicates results.
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="outputTitle">
+        <header>
+          <div class="title">
+            <strong id="outputTitle">Extracted IPs</strong>
+            <span>Click a link to open an inspection site in a new tab</span>
+          </div>
+          <div class="actions">
+            <button id="copyBtn" type="button">Copy list</button>
+          </div>
+        </header>
+
+        <div class="body">
+          <div class="results-toolbar">
+            <div class="left">
+              <span id="countPill" class="pill">0 found</span>
+              <span class="subtle">Filter:</span>
+              <input id="filterInput" type="search" placeholder="Type to filter IPs" />
+            </div>
+            <div class="subtle">Links use <span class="kbd">rel=&quot;noopener noreferrer&quot;</span></div>
+          </div>
+
+          <div class="list" role="table" aria-label="Extracted IP list">
+            <div class="list-header" role="row">
+              <div role="columnheader">IP</div>
+              <div role="columnheader">Inspection links</div>
+            </div>
+            <div id="listBody" class="list-body" role="rowgroup"></div>
+          </div>
+
+          <div class="muted-note">
+            The links area stays one line tall and scrolls horizontally.
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const MAX_CHARS = 2_000_000;
+
+    const INSPECTION_SITES = [
+      { label: "iplocation.io", baseUrl: "https://iplocation.io/ip/", enabled: true },
+      { label: "AbuseIPDB", baseUrl: "https://www.abuseipdb.com/check/", enabled: true },
+
+      /*
+      RE-ENABLE IN THE FUTURE:
+      { label: "Placeholder Site B", baseUrl: "https://example.org/lookup?ip=", enabled: false },
+      */
+    ];
+
+    const el = {
+      inputText: document.getElementById("inputText"),
+      extractBtn: document.getElementById("extractBtn"),
+      clearBtn: document.getElementById("clearBtn"),
+      copyBtn: document.getElementById("copyBtn"),
+      listBody: document.getElementById("listBody"),
+      countPill: document.getElementById("countPill"),
+      statusPill: document.getElementById("statusPill"),
+      filterInput: document.getElementById("filterInput"),
+      dropzone: document.getElementById("dropzone"),
+    };
+
+    const state = { allIps: [], filteredIps: [] };
+
+    function setStatus(text, kind) {
+      el.statusPill.textContent = text;
+      el.statusPill.className = "pill";
+      if (kind === "ok") el.statusPill.classList.add("ok");
+      if (kind === "warn") el.statusPill.classList.add("warn");
+    }
+
+    function setCount(n) {
+      el.countPill.textContent = `${n} found`;
+    }
+
+    function isValidIPv4(ip) {
+      const parts = ip.split(".");
+      if (parts.length !== 4) return false;
+
+      for (const p of parts) {
+        if (!/^\d{1,3}$/.test(p)) return false;
+        const n = Number(p);
+        if (n < 0 || n > 255) return false;
+        if (p.length > 1 && p.startsWith("0")) return false;
+      }
+      return true;
+    }
+
+    function isValidIPv6(ip) {
+      if (ip.includes(".")) return false;
+      if (ip.includes("%")) return false;
+
+      const parts = ip.split("::");
+      if (parts.length > 2) return false;
+
+      const left = parts[0] ? parts[0].split(":") : [];
+      const right = (parts.length === 2 && parts[1]) ? parts[1].split(":") : [];
+
+      const isHexGroup = (g) => /^[0-9a-fA-F]{1,4}$/.test(g);
+
+      if (parts.length === 1) {
+        if (left.length !== 8) return false;
+        return left.every(isHexGroup);
+      }
+
+      if (left.some(g => g.length === 0) || right.some(g => g.length === 0)) return false;
+      if (!left.every(isHexGroup) || !right.every(isHexGroup)) return false;
+
+      if (left.length + right.length >= 8) return false;
+      return true;
+    }
+
+    function normalizeIp(ip) {
+      return ip.trim();
+    }
+
+    function extractCandidateTokens(text) {
+      const candidates = new Set();
+
+      const ipv4Candidate = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
+
+      const ipv6Candidate =
+        /(?<![0-9A-Fa-f:])(?:[0-9A-Fa-f]{1,4}:){1,7}[0-9A-Fa-f]{1,4}(?![0-9A-Fa-f:])|(?<![0-9A-Fa-f:])(?:[0-9A-Fa-f]{1,7}:)(?![0-9A-Fa-f:])|(?<![0-9A-Fa-f:]):(?::[0-9A-Fa-f]{1,4}){1,7}(?![0-9A-Fa-f:])|(?<![0-9A-Fa-f:])(?:[0-9A-Fa-f]{1,6}):(?::[0-9A-Fa-f]{1,4}){1,2}(?![0-9A-Fa-f:])|(?<![0-9A-Fa-f:])[0-9A-Fa-f]{1,4}::(?![0-9A-Fa-f:])|(?<![0-9A-Fa-f:])::(?![0-9A-Fa-f:])/g;
+
+      for (const m of text.matchAll(ipv4Candidate)) candidates.add(m[0]);
+      for (const m of text.matchAll(ipv6Candidate)) candidates.add(m[0]);
+
+      const bracketed = /\[([^\]]+)\]/g;
+      for (const m of text.matchAll(bracketed)) {
+        const inner = m[1].trim();
+        if (inner.includes(":") || inner.includes(".")) candidates.add(inner);
+      }
+
+      return Array.from(candidates);
+    }
+
+    function extractValidIps(text) {
+      const candidates = extractCandidateTokens(text);
+
+      const seen = new Set();
+      const valid = [];
+
+      for (const raw of candidates) {
+        const ip = normalizeIp(raw);
+        if (seen.has(ip)) continue;
+
+        if (isValidIPv4(ip) || isValidIPv6(ip)) {
+          seen.add(ip);
+          valid.push(ip);
+        }
+      }
+
+      valid.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+      return valid;
+    }
+
+    function buildLink(site, ip) {
+      const url = new URL(site.baseUrl + encodeURIComponent(ip));
+      if (url.protocol !== "https:") throw new Error("Only https links are allowed.");
+
+      const a = document.createElement("a");
+      a.textContent = site.label;
+      a.href = url.toString();
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      return a;
+    }
+
+    function buildPlaceholder(site) {
+      const s = document.createElement("span");
+      s.className = "placeholder";
+      s.textContent = site.label;
+      s.setAttribute("aria-disabled", "true");
+      return s;
+    }
+
+    function renderEmptyRow() {
+      const row = document.createElement("div");
+      row.className = "row";
+      row.setAttribute("role", "row");
+
+      const ipCell = document.createElement("div");
+      ipCell.className = "ip";
+      ipCell.textContent = "No IPs extracted";
+
+      const linksCell = document.createElement("div");
+      linksCell.className = "links";
+      linksCell.style.overflowX = "hidden";
+      linksCell.textContent = "Paste text on the left and click Extract IPs";
+
+      row.appendChild(ipCell);
+      row.appendChild(linksCell);
+      el.listBody.appendChild(row);
+    }
+
+    function renderList(ips) {
+      el.listBody.replaceChildren();
+
+      if (ips.length === 0) {
+        renderEmptyRow();
+        return;
+      }
+
+      for (const ip of ips) {
+        const row = document.createElement("div");
+        row.className = "row";
+        row.setAttribute("role", "row");
+
+        const ipCell = document.createElement("div");
+        ipCell.className = "ip";
+        ipCell.textContent = ip;
+
+        const linksCell = document.createElement("div");
+        linksCell.className = "links";
+
+        for (const site of INSPECTION_SITES) {
+          linksCell.appendChild(site.enabled ? buildLink(site, ip) : buildPlaceholder(site));
+        }
+
+        row.appendChild(ipCell);
+        row.appendChild(linksCell);
+        el.listBody.appendChild(row);
+      }
+    }
+
+    function applyFilter() {
+      const q = el.filterInput.value.trim().toLowerCase();
+      state.filteredIps = q ? state.allIps.filter(ip => ip.toLowerCase().includes(q)) : state.allIps.slice();
+      setCount(state.filteredIps.length);
+      renderList(state.filteredIps);
+    }
+
+    function extractAndRender() {
+      const text = el.inputText.value || "";
+
+      if (text.length > MAX_CHARS) {
+        setStatus(`Input too large (${text.length.toLocaleString()} chars)`, "warn");
+        return;
+      }
+
+      const ips = extractValidIps(text);
+      state.allIps = ips;
+      el.filterInput.value = "";
+      state.filteredIps = ips.slice();
+
+      setCount(ips.length);
+      renderList(ips);
+
+      if (ips.length > 0) setStatus("Extracted", "ok");
+      else setStatus("No IPs found", "warn");
+    }
+
+    async function copyListToClipboard() {
+      const lines = state.filteredIps.length ? state.filteredIps : state.allIps;
+      try {
+        await navigator.clipboard.writeText(lines.join("\n"));
+        setStatus("Copied", "ok");
+      } catch {
+        setStatus("Copy failed", "warn");
+      }
+    }
+
+    function clearAll() {
+      el.inputText.value = "";
+      el.filterInput.value = "";
+      state.allIps = [];
+      state.filteredIps = [];
+      setCount(0);
+      el.listBody.replaceChildren();
+      renderEmptyRow();
+      setStatus("Cleared", "ok");
+      el.inputText.focus();
+    }
+
+    function onDropzoneDragOver(ev) {
+      ev.preventDefault();
+      el.dropzone.classList.add("dragover");
+      ev.dataTransfer.dropEffect = "copy";
+    }
+
+    function onDropzoneDragLeave() {
+      el.dropzone.classList.remove("dragover");
+    }
+
+    async function onDropzoneDrop(ev) {
+      ev.preventDefault();
+      el.dropzone.classList.remove("dragover");
+
+      const file = ev.dataTransfer.files && ev.dataTransfer.files[0];
+      if (!file) return;
+
+      if (file.type && !file.type.startsWith("text/")) {
+        setStatus("Unsupported file type", "warn");
+        return;
+      }
+
+      try {
+        const content = await file.text();
+        if (content.length > MAX_CHARS) {
+          setStatus(`File too large (${content.length.toLocaleString()} chars)`, "warn");
+          return;
+        }
+        el.inputText.value = content;
+        setStatus("File loaded", "ok");
+        extractAndRender();
+      } catch {
+        setStatus("File read failed", "warn");
+      }
+    }
+
+    el.extractBtn.addEventListener("click", extractAndRender);
+    el.clearBtn.addEventListener("click", clearAll);
+    el.copyBtn.addEventListener("click", copyListToClipboard);
+    el.filterInput.addEventListener("input", applyFilter);
+
+    el.inputText.addEventListener("keydown", (ev) => {
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "enter") extractAndRender();
+    });
+
+    el.dropzone.addEventListener("dragover", onDropzoneDragOver);
+    el.dropzone.addEventListener("dragleave", onDropzoneDragLeave);
+    el.dropzone.addEventListener("drop", onDropzoneDrop);
+
+    renderList([]);
+    setStatus("Idle", "");
+  </script>
+</body>
+</html>
